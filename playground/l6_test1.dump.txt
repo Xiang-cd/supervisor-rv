@@ -1,0 +1,24 @@
+
+l6_test1.elf:     file format elf32-littleriscv
+
+
+Disassembly of section .text:
+
+00000000 <succ-0x28>:
+   0:	00000293          	li	t0,0
+   4:	800002b7          	lui	t0,0x80000
+   8:	06028293          	addi	t0,t0,96 # 80000060 <__global_pointer$+0x7fffe82c>
+   c:	00500313          	li	t1,5
+  10:	006281a3          	sb	t1,3(t0)
+  14:	00328383          	lb	t2,3(t0)
+  18:	00730863          	beq	t1,t2,28 <succ>
+  1c:	3ff00e13          	li	t3,1023
+  20:	01c2a223          	sw	t3,4(t0)
+  24:	00000663          	beqz	zero,30 <end>
+
+00000028 <succ>:
+  28:	40000e13          	li	t3,1024
+  2c:	01c2a223          	sw	t3,4(t0)
+
+00000030 <end>:
+  30:	00000063          	beqz	zero,30 <end>
