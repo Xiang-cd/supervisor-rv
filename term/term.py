@@ -354,6 +354,7 @@ def run_G(addr):
 
     try:
         ret = inp.read(1)
+        print("readed")
         if ret == b'\x80':
             trap()
         if ret != b'\x06':

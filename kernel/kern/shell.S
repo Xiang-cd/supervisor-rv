@@ -1,4 +1,12 @@
 #include <exception.h>
+    .section .rodata
+back_to_user:
+    .asciz "back to user\n"
+
+    .section .rodata
+setting_time:
+    .asciz "setting_time\n"
+
 
     .section .bss.uregs
     .p2align 2
@@ -176,11 +184,17 @@ SHELL:
 
 #ifdef ENABLE_INT
     // 用户程序入口写入EPC
+
     csrw mepc, s10
 
+    la a0, setting_time
+    jal WRITE_SERIAL_STRING
     // 设置 MPP=0，对应 U-mode
     li a0, MSTATUS_MPP_MASK
     csrc mstatus, a0
+
+    la a0, setting_time
+    jal WRITE_SERIAL_STRING
 
     // 设置时钟中断，用于检测运行超时
 #ifdef RV64
@@ -204,7 +218,9 @@ SHELL:
 #endif
 
 #endif
-
+    // debug 打印字符串
+    la a0, back_to_user
+    jal WRITE_SERIAL_STRING
     // 定位用户空间寄存器备份地址
     la ra, uregs
     // 保存栈指针

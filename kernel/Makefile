@@ -47,9 +47,9 @@ endif
 
 CONFIG_FILE := .config_$(BITS)_$(EN_INT)_$(EN_PAGING)_$(EN_FENCEI)_$(EN_UART16550)
 
-.PHONY: all clean show-utest sim debug inst
+.PHONY: all clean show-utest sim debug inst copy
 
-all: checkdirs $(TARGET) kernel.bin kernel.asm
+all: checkdirs $(TARGET) kernel.bin kernel.asm copy
 
 $(CONFIG_FILE):
 	@rm -f .config_*
@@ -86,3 +86,6 @@ inst: checkdirs $(TARGET)
 
 clean:
 	-$(RM) -r $(OBJDIR)
+
+copy:
+	cp kernel.bin ~/Desktop
