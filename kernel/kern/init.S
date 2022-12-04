@@ -387,15 +387,12 @@ mtvec_done:
     j WELCOME
 
 WELCOME:
-    // 装入启动信息并打印
-    la a0, monitor_version
-    jal WRITE_SERIAL_STRING
 
     // 设置 MPP=0，对应 U-mode
     li a0, MSTATUS_MPP_MASK
     csrc mstatus, a0
     la  a0, SHELL
-    csrw mepc, s10
+    csrw mepc, a0
     mret
     // 开始交互
     j SHELL
