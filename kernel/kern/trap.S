@@ -22,8 +22,6 @@ to_handler:
 #ifdef ENABLE_INT
 EXCEPTION_HANDLER:
     // 交换 mscratch 和 sp ，保存上下文
-    la a0, to_handler
-    jal WRITE_SERIAL_STRING
     csrrw sp, mscratch, sp
 
     STORE ra, TF_ra(sp)
@@ -94,8 +92,6 @@ EXCEPTION_HANDLER:
     j CONTEXT_SWITCH
 
 .HANDLE_BREAK:
-    la a0, e_break
-    jal WRITE_SERIAL_STRING
     j USERRET_MACHINE
 
 .HANDLE_INT:
@@ -110,8 +106,6 @@ EXCEPTION_HANDLER:
     // 来自 M 态的中断，直接返回
     bne t0, zero, CONTEXT_SWITCH
 
-    la a0, t_out
-    jal WRITE_SERIAL_STRING
     // 处理用户程序超时
     j USERRET_TIMEOUT
 

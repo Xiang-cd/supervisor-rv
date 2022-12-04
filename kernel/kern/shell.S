@@ -32,172 +32,30 @@ uregs:
      *  用户程序入口临时存储：0x807F0000
      */
 SHELL:
-    // 读操作符
-    jal READ_SERIAL
 
-    // 根据操作符进行不同的操作
-    li t0, 'R'
-    beq a0, t0, .OP_R
-    li t0, 'D'
-    beq a0, t0, .OP_D
-    li t0, 'A'
-    beq a0, t0, .OP_A
-    li t0, 'G'
-    beq a0, t0, .OP_G
-    li t0, 'T'
-    beq a0, t0, .OP_T
+    j .OP_G
 
-    // 错误的操作符，输出 XLEN，用于区分 RV32 和 RV64
-    li a0, XLEN
-    // 把 XLEN 写给 term
-    jal WRITE_SERIAL
-    j .DONE
 
-.OP_T:
-    // 操作 - 打印页表
-    // 保存寄存器
-    addi sp, sp, -3*XLEN
-    STORE s1, 0(sp)
-    STORE s2, XLEN(sp)
+.USER:
+    jr ra
 
-#ifdef ENABLE_PAGING
-    csrr s1, satp
-    slli s1, s1, 12
-#else
-    li s1, -1
-#endif
-    STORE s1, 2*XLEN(sp)
-    addi s1, sp, 2*XLEN
-    li s2, XLEN
-.LC0:
-    // 读取内存并写入串口
-    lb a0, 0(s1)
-    addi s2, s2, -1
-    jal WRITE_SERIAL
-    addi s1, s1, 0x1
-    bne s2, zero, .LC0
 
-    // 恢复寄存器
-    LOAD s1, 0x0(sp)
-    LOAD s2, XLEN(sp)
-    addi sp, sp, 3*XLEN
-
-    j .DONE
-
-.OP_R:
-    // 操作 - 打印用户空间寄存器
-    // 保存 s1, s2
-    addi sp, sp, -2*XLEN
-    STORE s1, 0(sp)
-    STORE s2, XLEN(sp)
-
-    // 打印 31 个寄存器
-    la s1, uregs
-    li s2, 31*XLEN
-.LC1:
-    // 读取内存并写入串口
-    lb a0, 0(s1)
-    addi s2, s2, -1
-    jal WRITE_SERIAL
-    addi s1, s1, 0x1
-    bne s2, zero, .LC1
-
-    // 恢复s1,s2
-    LOAD s1, 0(sp)
-    LOAD s2, XLEN(sp)
-    addi sp, sp, 2*XLEN
-    j .DONE
-
-.OP_D:
-    // 操作 - 打印内存 num 个字节
-    // 保存 s1, s2
-    addi sp, sp, -2*XLEN
-    STORE s1, 0(sp)
-    STORE s2, XLEN(sp)
-
-    // 获得 addr
-    jal READ_SERIAL_XLEN
-    or s1, a0, zero
-    // 获得 num
-    jal READ_SERIAL_XLEN
-    or s2, a0, zero
-
-.LC2:
-    // 读取内存并写入串口
-    lb a0, 0(s1)
-    addi s2, s2, -1
-    jal WRITE_SERIAL
-    addi s1, s1, 0x1
-    bne s2, zero, .LC2
-
-    // 恢复 s1, s2
-    LOAD s1, 0(sp)                    
-    LOAD s2, XLEN(sp)
-    addi sp, sp, 2*XLEN
-    j .DONE
-
-.OP_A:
-    // 操作 - 写入内存 num 字节，num 为 4 的倍数
-    // 保存 s1, s2
-    addi sp, sp, -2*XLEN
-    STORE s1, 0(sp)
-    STORE s2, 4(sp)
-
-    // 获得 addr
-    jal READ_SERIAL_XLEN
-    or s1, a0, zero
-
-    // 获得 num
-    jal READ_SERIAL_XLEN
-    or s2, a0, zero
-
-    // num 除 4，获得字数
-    srl s2, s2, 2
-
-.LC3:
-    // 每次写入一字
-    // 从串口读入一字
-    jal READ_SERIAL_WORD
-    // 写内存一字
-    sw a0, 0(s1)
-    addi s2, s2, -1
-    addi s1, s1, 4
-    bne s2, zero, .LC3
-
-#ifdef ENABLE_FENCEI
-    // 有 Cache 时让写入的代码生效
-    fence.i
-#endif
-
-    // 恢复 s1, s2
-    LOAD s1, 0(sp)
-    LOAD s2, XLEN(sp)
-    addi sp, sp, 2*XLEN
-    j .DONE
 
 .OP_G:
     // 操作 - 跳转到用户程序执行
-    // 获取 addr
-    jal READ_SERIAL_XLEN
     // 保存到 s10
-    mv s10, a0
+    la s10, .USER
 
     // 写开始计时信号
-    // 告诉终端用户程序开始运行
-    li a0, SIG_TIMERSET
-    jal WRITE_SERIAL
 
 #ifdef ENABLE_INT
     // 用户程序入口写入EPC
-
     csrw mepc, s10
 
     // 设置 MPP=0，对应 U-mode
     li a0, MSTATUS_MPP_MASK
     csrc mstatus, a0
 
-    la a0, setting_time
-    jal WRITE_SERIAL_STRING
 
     // 设置时钟中断，用于检测运行超时
 #ifdef RV64
@@ -263,9 +121,6 @@ SHELL:
 
 .ENTER_UESR:
 #ifdef ENABLE_INT
-    // debug 打印字符串
-    la a0, back_to_user
-    jal WRITE_SERIAL_STRING
     // ra 写入返回地址
     la ra, .USERRET_USER
     // 进入用户程序
@@ -278,16 +133,12 @@ SHELL:
 
 #ifdef ENABLE_INT
 .USERRET_USER:
-    la a0, back_to_user
-    jal WRITE_SERIAL_STRING
     ebreak
 
     .global USERRET_TIMEOUT
 USERRET_TIMEOUT:
     // 发送超时信号
     // 告诉终端用户程序结束运行
-    la a0, shell_t_o
-    jal WRITE_SERIAL_STRING
     li a0, SIG_TIMEOUT
     jal WRITE_SERIAL
     j 0f

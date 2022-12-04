@@ -88,4 +88,4 @@ clean:
 	-$(RM) -r $(OBJDIR)
 
 copy:
-	cp kernel.bin ~/Desktop
+	cp kernel.bin D:\rv-2022\supervisor-rv\kernel
