@@ -3,14 +3,17 @@
     .section .rodata
 e_break:
     .asciz "e_break\n"
+    .p2align 2
 
     .section .rodata
 t_out:
     .asciz "t_out\n"
+    .p2align 2
 
     .section .rodata
 to_handler:
     .asciz "user to_handler\n"
+    .p2align 2
 
     .p2align 2
     .text

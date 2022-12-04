@@ -2,11 +2,16 @@
     .section .rodata
 back_to_user:
     .asciz "back to user\n"
+    .p2align 2
 
     .section .rodata
 setting_time:
     .asciz "setting_time\n"
+    .p2align 2
 
+shell_t_o:
+    .asciz "shell_t_o\n"
+    .p2align 2
 
     .section .bss.uregs
     .p2align 2
@@ -187,8 +192,6 @@ SHELL:
 
     csrw mepc, s10
 
-    la a0, setting_time
-    jal WRITE_SERIAL_STRING
     // 设置 MPP=0，对应 U-mode
     li a0, MSTATUS_MPP_MASK
     csrc mstatus, a0
@@ -218,9 +221,7 @@ SHELL:
 #endif
 
 #endif
-    // debug 打印字符串
-    la a0, back_to_user
-    jal WRITE_SERIAL_STRING
+
     // 定位用户空间寄存器备份地址
     la ra, uregs
     // 保存栈指针
@@ -262,6 +263,9 @@ SHELL:
 
 .ENTER_UESR:
 #ifdef ENABLE_INT
+    // debug 打印字符串
+    la a0, back_to_user
+    jal WRITE_SERIAL_STRING
     // ra 写入返回地址
     la ra, .USERRET_USER
     // 进入用户程序
@@ -274,12 +278,16 @@ SHELL:
 
 #ifdef ENABLE_INT
 .USERRET_USER:
+    la a0, back_to_user
+    jal WRITE_SERIAL_STRING
     ebreak
 
     .global USERRET_TIMEOUT
 USERRET_TIMEOUT:
     // 发送超时信号
     // 告诉终端用户程序结束运行
+    la a0, shell_t_o
+    jal WRITE_SERIAL_STRING
     li a0, SIG_TIMEOUT
     jal WRITE_SERIAL
     j 0f

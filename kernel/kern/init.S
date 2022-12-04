@@ -88,7 +88,7 @@ PAGE_TABLE_USER_STACK_3:
     .section .rodata
     // 启动时输出的信息
 monitor_version:
-    .asciz "MONITOR for RISC-V - initialized."
+    .asciz "O."
 
     .text
     .p2align 2
@@ -99,11 +99,11 @@ START:
     // _sbss 和 _ebss 在 ld script 中定义
     la s10, _sbss
     la s11, _ebss
-bss_init:
-    beq s10, s11, bss_init_done
-    sw  zero, 0(s10)
-    addi s10, s10, 4
-    j   bss_init
+# bss_init:
+#     beq s10, s11, bss_init_done
+#     sw  zero, 0(s10)
+#     addi s10, s10, 4
+#     j   bss_init
 bss_init_done:
 
 #ifdef ENABLE_INT
@@ -161,7 +161,8 @@ mtvec_done:
 #endif
 
     // 从内核栈顶清空并留出 TF_SIZE 大小的空间用于存储中断帧
-    li t0, TF_SIZE
+    # li t0, TF_SIZE
+    li t0, 32*4
 .LC0:
     addi t0, t0, -XLEN
     addi sp, sp, -XLEN
@@ -176,7 +177,8 @@ mtvec_done:
     mv t6, sp
 
     // 初始化栈空间
-    li t0, TF_SIZE
+    # li t0, TF_SIZE
+    li t0, 32*4
 .LC1:
     addi t0, t0, -XLEN
     addi sp, sp, -XLEN
@@ -389,5 +391,11 @@ WELCOME:
     la a0, monitor_version
     jal WRITE_SERIAL_STRING
 
+    // 设置 MPP=0，对应 U-mode
+    li a0, MSTATUS_MPP_MASK
+    csrc mstatus, a0
+    la  a0, SHELL
+    csrw mepc, s10
+    mret
     // 开始交互
     j SHELL
